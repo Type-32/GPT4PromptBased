@@ -3,6 +3,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 *.openai_api_key_secure
+*.conv_log
 
 # C extensions
 *.so
