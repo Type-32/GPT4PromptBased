@@ -1,10 +1,12 @@
 import asyncio
 import string
+import sys
+
 from rich import print as printmd
 from rich.markdown import Markdown
 import openai
 from datetime import datetime
-# Load your API key from an environment variable or secret management service
+import os
 
 class Gpt4Instance:
     def __init__(self, header: string = "You are a helpful assistant.", key: string = ""):
@@ -22,7 +24,7 @@ class Gpt4Instance:
         self.messages.append(dict({"role": "user", "content": prompt}))
         response = openai.ChatCompletion.create(model="gpt-4", messages=self.messages)['choices'][0]['message']['content']
         self.responses.append(response)
-        self.log_file.write(f"Prompt: {prompt}\nResponse: {response}\n")
+        self.log_file.write(f"> {prompt}\nResponse: {response}\n\n")
         return response
 
     def newConversation(self):
@@ -53,3 +55,11 @@ def parse_markdown_native(text):
 def parse_markdown(text):
     md = Markdown(text)
     printmd(md)
+
+def clearScreen():
+    # if the Operating System is Windows
+    if sys.platform == "win32":
+        os.system("cls")
+    # if the Operating System is Linux or MacOS
+    if sys.platform == "linux" or sys.platform == "linux2" or sys.platform == "darwin":
+        os.system("clear") # Clears the terminal screen.
