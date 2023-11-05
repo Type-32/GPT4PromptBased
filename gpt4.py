@@ -17,7 +17,11 @@ class Gpt4Instance:
         ]
         self.responses = ["DefaultResponse"]
         self.conversationStamp: string = datetime.now().strftime("date%Y-%m-%d_time%H.%M.%S")
-        self.log_file = open(f"{self.conversationStamp}.conv_log", "w")
+
+        if not os.path.exists('conversations'):
+            os.makedirs('conversations')
+
+        self.log_file = open(os.path.join('conversations',f"{self.conversationStamp}.conv_log"), "w")
         openai.api_key = key
 
     def chat(self, prompt: string):
@@ -33,7 +37,7 @@ class Gpt4Instance:
         ]
         self.log_file.close()
         self.conversationStamp: string = datetime.now().strftime("date%Y-%m-%d_time%H.%M.%S")
-        self.log_file = open(f"{self.conversationStamp}.conv_log", "w")
+        self.log_file = open(os.path.join('conversations',f"{self.conversationStamp}.conv_log"), "w")
 
     def __del__(self):
         self.log_file.close()

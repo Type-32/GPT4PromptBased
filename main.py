@@ -7,15 +7,14 @@ from gpt4 import Gpt4Instance
 # Get the current console size
 rows, columns = os.popen('stty size', 'r').read().split()
 
-
 with open("key.openai_api_key_secure", 'r') as file:
     key = file.read()
 
 instance: Gpt4Instance = Gpt4Instance(key=key)
 prompt: string = ""
-while prompt != "/quit/":
+while True:
     prompt = input("> ")
-    if prompt == "/new/":
+    if prompt == ":/params new":
         instance.newConversation()
         gpt4.clearScreen()
         continue
