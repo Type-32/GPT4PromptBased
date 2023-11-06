@@ -12,16 +12,35 @@ class MsgRole(Enum):
     SYSTEM = "system"
 
 
+def decode_timestamp(filename):
+    """
+    Extracts timestamp from conversation file names.
+    :param filename: The file name.
+    :return: The timestamp included in the file name.
+    """
+    timestamp_str = filename[4:-5]  # Extract the timestamp string from the filename
+    timestamp = datetime.strptime(timestamp_str, '%Y-%m-%d_time%H.%M.%S')  # Convert the string to a datetime object
+    return timestamp
+
+
 class Conversation:
     def __init__(self, filename: string = None, prompt: string = None):
         if not os.path.exists('conversations'):
             os.makedirs('conversations')
-        if filename:
-            self.__readfile__(filename)
-            self.timestamp = self.decode_timestamp(filename)
+        if filename is not None:
+            res: bool = self.__readfile__(filename)
+            if not res:
+                self.history = {"messages": [{"role": "system", "content": "You are a helpful and knowledgeable assistant." if not prompt else prompt}], "responses": ["DefaultResponse"]}
+                self.timestamp = datetime.now().strftime("date%Y-%m-%d_time%H.%M.%S")
         else:
             self.history = {"messages": [{"role": "system", "content": "You are a helpful and knowledgeable assistant." if not prompt else prompt}], "responses": ["DefaultResponse"]}
             self.timestamp = datetime.now().strftime("date%Y-%m-%d_time%H.%M.%S")
+
+    def to_dict(self):
+        return {
+            'history': self.history,
+            'timestamp': self.timestamp
+        }
 
     def get_messages(self, include_default: bool = False):
         result: list[string] = []
@@ -30,6 +49,9 @@ class Conversation:
             result.append(i.get("content"))
         return result
 
+    def get_messages_raw(self, include_default: bool = True):
+        return self.history['messages']
+
     def get_responses(self, include_default: bool = False):
         result: list[string] = []
         for i in self.history['responses']:
@@ -37,36 +59,39 @@ class Conversation:
             result.append(i)
         return result
 
+    def get_responses_raw(self, include_default: bool = True):
+        return self.history['responses']
+
     def add_response(self, content: string):
         self.history['responses'].append(content)
 
     def add_msg(self, prompt: string, role: MsgRole):
-        self.history["messages"].append(dict({"role": role.__str__(), "content": prompt}))
+        self.history["messages"].append(dict({"role": role.value, "content": prompt}))
 
     def __readfile__(self, filename: string):
         """
         Extracts conversation file from file name.
         :param filename: conv_log file name.
         """
-        fpath = os.path.join(os.path.curdir, 'conversations', filename)
-        readResult = {}
-        try:
-            with open(fpath, 'r') as file:
-                readResult = json.load(file)
-                self.history = readResult
-        except FileNotFoundError:
-            print(f"File '{fpath}' not found.")
+        readResult = None
+        with open(os.path.join(os.path.curdir, 'conversations', filename), 'r') as file:
+            readResult = json.load(file)
+            self.history = readResult['history']
+            self.timestamp = readResult['timestamp']
+            return True
 
-    def decode_timestamp(self, filename):
-        """
-        Extracts timestamp from conversation file names.
-        :param filename: The file name.
-        :return: The timestamp included in the file name.
-        """
-        timestamp_str = filename[4:-9]  # Extract the timestamp string from the filename
-        timestamp = datetime.strptime(timestamp_str, '%Y-%m-%d_time%H.%M.%S')  # Convert the string to a datetime object
-        return timestamp
-    
+            # try:
+            #     readResult = json.loads(next(file))
+            #     self.history = readResult['history']
+            #     self.timestamp = readResult['timestamp']
+            #     return True
+            # except Exception:
+            #     print("exception")
+            #     return False
+
+    def __str__(self):
+        return f"Conversation initiated at {self.timestamp}"
+
 
 class Gpt4Instance:
     def __init__(self, header: string = "You are a helpful assistant.", key: string = ""):
@@ -84,9 +109,17 @@ class Gpt4Instance:
         self.currentConversation: Conversation = None
         openai.api_key = key
 
-    def saveConversation(self, closeFile: bool = False):
-        json.dump(self.currentConversation, self.log_file)
-        if closeFile: self.log_file.close()
+    def save_conversation(self, closeFile: bool = False):
+        if self.log_file.closed:
+            self.log_file = open(os.path.join('conversations', f"{self.currentConversation.timestamp}.conv"), "w")
+        self.log_file.write("")
+        self.log_file.flush()
+        self.log_file.close()
+        self.log_file = open(os.path.join('conversations', f"{self.currentConversation.timestamp}.conv"), "w")
+        json.dump(self.currentConversation.to_dict(), self.log_file)
+        if closeFile:
+            self.currentConversation = None
+            self.log_file.close()
 
     def chat(self, prompt: string):
         """
@@ -94,13 +127,17 @@ class Gpt4Instance:
         :param prompt: The prompt for the Model.
         :return: The response for the prompt.
         """
+        if not self.currentConversation:
+            self.new_conversation()
         starttime = time.time()
-        tokenlist = self.currentConversation.get_messages()
-        tokenlist.append(prompt)
+        tokenlist: list[dict[str, str]] = []
+        for i in self.currentConversation.get_messages_raw():
+            tokenlist.append(i)
+        tokenlist.append(dict({"role": "user", "content": prompt}))
         response = openai.ChatCompletion.create(model="gpt-4", messages=tokenlist)['choices'][0]['message']['content']
         self.currentConversation.add_msg(prompt, MsgRole.USER)
         self.currentConversation.add_response(response)
-        self.saveConversation()
+        self.save_conversation()
         endtime = time.time() - starttime
         return response, endtime
 
@@ -108,8 +145,11 @@ class Gpt4Instance:
         """
         Creates a new conversation.
         """
-        self.saveConversation(True)
-        self.currentConversation = Conversation()
+        if self.log_file:
+            self.log_file.close()
+        if self.currentConversation:
+            self.save_conversation(True)
+        self.currentConversation = Conversation(prompt=prompt)
         self.refresh_conversations()
         self.log_file = open(os.path.join('conversations', f"{self.currentConversation.timestamp}.conv"), "w")
 
@@ -125,8 +165,12 @@ class Gpt4Instance:
             result.append(Conversation(name))
         return result
 
+    def set_conversation(self, conversation: Conversation):
+        if self.log_file:
+            self.log_file.close()
+        self.conversations = self.fetch_conversation_saves()
+        self.currentConversation = conversation
+        self.log_file = open(os.path.join('conversations', f"{self.currentConversation.timestamp}.conv"), "w")
+
     def refresh_conversations(self):
         self.conversations = self.fetch_conversation_saves()
-
-    def __del__(self):
-        self.log_file.close()
