@@ -7,6 +7,9 @@ from datetime import datetime
 import os
 from enum import Enum
 
+import putils
+
+
 class MsgRole(Enum):
     USER = "user"
     SYSTEM = "system"
@@ -78,7 +81,6 @@ class Conversation:
             readResult = json.load(file)
             self.history = readResult['history']
             self.timestamp = readResult['timestamp']
-            return True
 
             # try:
             #     readResult = json.loads(next(file))
@@ -162,15 +164,25 @@ class Gpt4Instance:
         convNames = [f for f in os.listdir(dir_path) if f.endswith('.conv')]
         result: list[Conversation] = []
         for name in convNames:
-            result.append(Conversation(name))
+            try:
+                result.append(Conversation(name))
+            except Exception:
+                continue
         return result
 
-    def set_conversation(self, conversation: Conversation):
+    def set_conversation(self, conversation: Conversation, printPreviousConv: bool = True):
         if self.log_file:
             self.log_file.close()
         self.conversations = self.fetch_conversation_saves()
         self.currentConversation = conversation
         self.log_file = open(os.path.join('conversations', f"{self.currentConversation.timestamp}.conv"), "w")
+        if printPreviousConv:
+            for i in range(len(self.currentConversation.get_messages())-1):
+                print(f"> {self.currentConversation.get_messages()[i+1]}")
+                putils.separator()
+                print(self.currentConversation.get_responses()[i+1])
+                putils.separator()
+                print()
 
     def refresh_conversations(self):
         self.conversations = self.fetch_conversation_saves()
