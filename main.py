@@ -46,12 +46,17 @@ while True:
             menuIndex = 0
             instance.save_conversation(True)
             continue
-        putils.separator()
-        response, timetaken = instance.chat(prompt)
-        putils.parse_markdown(response)
-        putils.separator()
-        print(putils.processStyle(f"Time taken to generate response: {math.trunc(timetaken)} seconds","aqua", "italic"))
-        print()
+
+        try:
+            putils.separator()
+            response, timetaken = instance.chat(prompt)
+            putils.parse_markdown(response)
+            putils.separator()
+            print(putils.processStyle(f"Time taken to generate response: {math.trunc(timetaken)} seconds","aqua", "italic"))
+            print()
+        except Exception:
+            print(putils.processStyle("An Error occurred while trying to access OpenAI. This conversation will not be saved.", "red", "underlined"))
+            break
 
     elif menuIndex == 2:
         files = instance.fetch_conversation_saves()

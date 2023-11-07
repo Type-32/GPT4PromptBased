@@ -31,10 +31,7 @@ class Conversation:
         if not os.path.exists('conversations'):
             os.makedirs('conversations')
         if filename is not None:
-            res: bool = self.__readfile__(filename)
-            if not res:
-                self.history = {"messages": [{"role": "system", "content": "You are a helpful and knowledgeable assistant." if not prompt else prompt}], "responses": ["DefaultResponse"]}
-                self.timestamp = datetime.now().strftime("date%Y-%m-%d_time%H.%M.%S")
+            self.__readfile__(filename)
         else:
             self.history = {"messages": [{"role": "system", "content": "You are a helpful and knowledgeable assistant." if not prompt else prompt}], "responses": ["DefaultResponse"]}
             self.timestamp = datetime.now().strftime("date%Y-%m-%d_time%H.%M.%S")
@@ -48,7 +45,7 @@ class Conversation:
     def get_messages(self, include_default: bool = False):
         result: list[string] = []
         for i in self.history['messages']:
-            if i == {"role": "system", "content": "You are a helpful assistant."}: continue
+            if i["role"] == "system": continue
             result.append(i.get("content"))
         return result
 
@@ -173,16 +170,18 @@ class Gpt4Instance:
     def set_conversation(self, conversation: Conversation, printPreviousConv: bool = True):
         if self.log_file:
             self.log_file.close()
-        self.conversations = self.fetch_conversation_saves()
         self.currentConversation = conversation
         self.log_file = open(os.path.join('conversations', f"{self.currentConversation.timestamp}.conv"), "w")
         if printPreviousConv:
-            for i in range(len(self.currentConversation.get_messages())-1):
-                print(f"> {self.currentConversation.get_messages()[i+1]}")
+            for i in range(len(self.currentConversation.get_messages())):
+                print(f"> {self.currentConversation.get_messages()[i]}")
                 putils.separator()
-                print(self.currentConversation.get_responses()[i+1])
+                putils.parse_markdown(self.currentConversation.get_responses()[i])
                 putils.separator()
                 print()
 
     def refresh_conversations(self):
         self.conversations = self.fetch_conversation_saves()
+
+    def __del__(self):
+        self.save_conversation(True)
