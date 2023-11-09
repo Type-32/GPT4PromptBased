@@ -98,6 +98,6 @@ def parse_markdown_native(text):
     return Markdown(text)
 
 
-def parse_markdown(text):
+def parse_markdown(text, end: string = '\n'):
     md = Markdown(text)
-    printmd(md)
+    printmd(md, end=end)

@@ -3,6 +3,7 @@ import string
 import sys
 
 import putils
+from app import ChatApp
 from gpt4 import Gpt4Instance
 
 # Get the current console size
@@ -17,6 +18,10 @@ prompt: string = ""
 menuIndex: int = 0
 fileSelect: int = 0
 
+app = ChatApp(instance)
+app.run()
+
+"""
 while True:
     if menuIndex == 0:
         putils.clearScreen()
@@ -47,10 +52,10 @@ while True:
             instance.save_conversation(True)
             continue
 
+        timetaken = instance.chat(prompt)
         try:
             putils.separator()
-            response, timetaken = instance.chat(prompt)
-            putils.parse_markdown(response)
+
             putils.separator()
             print(putils.processStyle(f"Time taken to generate response: {math.trunc(timetaken)} seconds","aqua", "italic"))
             print()
@@ -78,4 +83,4 @@ while True:
                 break
             except:
                 continue
-
+"""

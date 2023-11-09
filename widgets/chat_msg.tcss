@@ -1,0 +1,23 @@
+ChatMsg {
+    background: $boost;
+    margin-bottom: 1;
+}
+#user-msg {
+    width: 100%;
+    text-align: right;
+    align: right middle;
+}
+#gpt-msg {
+    width: 100%;
+    text-align: left;
+    align: left middle;
+}
+
+#msg-username {
+    text-style: bold;
+}
+
+#chat-row {
+    width: 100%;
+    height: 6;
+}

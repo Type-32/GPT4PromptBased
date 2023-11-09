@@ -1,18 +1,16 @@
 import json
 import string
 import time
+from datetime import datetime
 
 import openai
-from datetime import datetime
 import os
-from enum import Enum
+from rich import print as printmd
+from rich.markdown import Markdown
 
 import putils
-
-
-class MsgRole(Enum):
-    USER = "user"
-    SYSTEM = "system"
+from conversation import Conversation
+from msg_role import MsgRole
 
 
 def decode_timestamp(filename):
@@ -24,72 +22,6 @@ def decode_timestamp(filename):
     timestamp_str = filename[4:-5]  # Extract the timestamp string from the filename
     timestamp = datetime.strptime(timestamp_str, '%Y-%m-%d_time%H.%M.%S')  # Convert the string to a datetime object
     return timestamp
-
-
-class Conversation:
-    def __init__(self, filename: string = None, prompt: string = None):
-        if not os.path.exists('conversations'):
-            os.makedirs('conversations')
-        if filename is not None:
-            self.__readfile__(filename)
-        else:
-            self.history = {"messages": [{"role": "system", "content": "You are a helpful and knowledgeable assistant." if not prompt else prompt}], "responses": ["DefaultResponse"]}
-            self.timestamp = datetime.now().strftime("date%Y-%m-%d_time%H.%M.%S")
-
-    def to_dict(self):
-        return {
-            'history': self.history,
-            'timestamp': self.timestamp
-        }
-
-    def get_messages(self, include_default: bool = False):
-        result: list[string] = []
-        for i in self.history['messages']:
-            if i["role"] == "system": continue
-            result.append(i.get("content"))
-        return result
-
-    def get_messages_raw(self, include_default: bool = True):
-        return self.history['messages']
-
-    def get_responses(self, include_default: bool = False):
-        result: list[string] = []
-        for i in self.history['responses']:
-            if i == "DefaultResponse": continue
-            result.append(i)
-        return result
-
-    def get_responses_raw(self, include_default: bool = True):
-        return self.history['responses']
-
-    def add_response(self, content: string):
-        self.history['responses'].append(content)
-
-    def add_msg(self, prompt: string, role: MsgRole):
-        self.history["messages"].append(dict({"role": role.value, "content": prompt}))
-
-    def __readfile__(self, filename: string):
-        """
-        Extracts conversation file from file name.
-        :param filename: conv_log file name.
-        """
-        readResult = None
-        with open(os.path.join(os.path.curdir, 'conversations', filename), 'r') as file:
-            readResult = json.load(file)
-            self.history = readResult['history']
-            self.timestamp = readResult['timestamp']
-
-            # try:
-            #     readResult = json.loads(next(file))
-            #     self.history = readResult['history']
-            #     self.timestamp = readResult['timestamp']
-            #     return True
-            # except Exception:
-            #     print("exception")
-            #     return False
-
-    def __str__(self):
-        return f"Conversation initiated at {self.timestamp}"
 
 
 class Gpt4Instance:
@@ -109,6 +41,8 @@ class Gpt4Instance:
         openai.api_key = key
 
     def save_conversation(self, closeFile: bool = False):
+        if not self.log_file:
+            return
         if self.log_file.closed:
             self.log_file = open(os.path.join('conversations', f"{self.currentConversation.timestamp}.conv"), "w")
         self.log_file.write("")
@@ -120,7 +54,7 @@ class Gpt4Instance:
             self.currentConversation = None
             self.log_file.close()
 
-    def chat(self, prompt: string):
+    def chat(self, prompt: string, stream: bool = True):
         """
         Uses the API and sends the API a prompt.
         :param prompt: The prompt for the Model.
@@ -133,12 +67,25 @@ class Gpt4Instance:
         for i in self.currentConversation.get_messages_raw():
             tokenlist.append(i)
         tokenlist.append(dict({"role": "user", "content": prompt}))
-        response = openai.ChatCompletion.create(model="gpt-4", messages=tokenlist)['choices'][0]['message']['content']
+        if stream:
+            return openai.ChatCompletion.create(model="gpt-4", messages=tokenlist, stream=True)
+        response = openai.ChatCompletion.create(model="gpt-4", messages=tokenlist, stream=True)
+        connected_response: string = ""
+        for chunks in response:
+            result = chunks.to_dict().get("choices")[0].get("delta").get("content")
+            if isinstance(result, str):
+                try:
+                    mdobj = Markdown(result)
+                    printmd(mdobj, '')
+                except Exception:
+                    print(result, end='')
+                connected_response += result
+        print()
         self.currentConversation.add_msg(prompt, MsgRole.USER)
-        self.currentConversation.add_response(response)
+        self.currentConversation.add_response(connected_response)
         self.save_conversation()
         endtime = time.time() - starttime
-        return response, endtime
+        return endtime
 
     def new_conversation(self, prompt: string = None):
         """
@@ -180,8 +127,26 @@ class Gpt4Instance:
                 putils.separator()
                 print()
 
+    def delete_conversation(self, filename) -> True:
+        conversations_dir = os.path.join(os.path.curdir, 'conversations')
+        file_to_delete = os.path.join(conversations_dir, filename)
+
+        try:
+            if os.path.isfile(file_to_delete):
+                for i in self.conversations:
+                    if i.timestamp + ".conv" == filename:
+                        self.conversations.remove(i)
+                        break
+                os.remove(file_to_delete)
+                return True
+            else:
+                return False
+        except Exception:
+            return False
+
     def refresh_conversations(self):
         self.conversations = self.fetch_conversation_saves()
 
     def __del__(self):
-        self.save_conversation(True)
+        if self.currentConversation:
+            self.log_file.close()

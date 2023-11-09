@@ -1,0 +1,26 @@
+ConversationButton {
+    background: $boost;
+    height: 3;
+    margin-bottom: 1;
+}
+#conv-button-title {
+    text-style: bold;
+    width: 50%;
+    align: left middle;
+}
+#conv-button-desc {
+    text-style: italic;
+    color: gray;
+    width: 50%;
+    align: right middle;
+    text-align: right;
+}
+#conv-button-delete {
+    width: 10%;
+}
+#conv-button-text-container {
+    padding-left: 3;
+    padding-right: 3;
+    padding-top: 1;
+    padding-bottom: 1;
+}
