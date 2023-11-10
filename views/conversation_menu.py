@@ -1,4 +1,6 @@
+import asyncio
 import string
+import time
 
 from textual import on
 from textual.app import App, ComposeResult
@@ -41,16 +43,16 @@ class ConversationMenu(Static):
 
     def add_message(self, msg: string, username: string, alignment: MsgAlignment):
         msgObj = self.query_one("#scroll-container", ScrollableContainer)
-        msgObj.mount(ChatMsg(alignment, msg, username))
+        msgObj.mount(ChatMsg(alignment, msg, username, None, None))
         msgObj.scroll_visible()
         self.refresh()
 
     def stream_message(self, gpt: Gpt4Instance, prompt: string):
-        obj = ChatMsg(MsgAlignment.LEFT, "", "GPT-4")
+        obj = ChatMsg(MsgAlignment.LEFT, "Loading...", "GPT-4", prompt, gpt)
         msgObj = self.query_one("#scroll-container", ScrollableContainer)
         msgObj.mount(obj)
         msgObj.scroll_visible()
-        obj.set_stream(gpt, prompt)
+        obj.scroll_visible()
         obj.refresh()
         self.refresh()
 

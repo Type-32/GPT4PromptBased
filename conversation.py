@@ -17,6 +17,8 @@ class Conversation:
             self.history = {"messages": [{"role": "system", "content": "You are a helpful and knowledgeable assistant." if not prompt else prompt}], "responses": ["DefaultResponse"]}
             self.timestamp = datetime.now().strftime("date%Y-%m-%d_time%H.%M.%S")
 
+        self.conv_name = ""
+
     def get_processed_timestamp(self) -> string:
         processed: string = self.timestamp[4:len(self.timestamp)]
         processed.replace("_time", ", ")
@@ -25,7 +27,8 @@ class Conversation:
     def to_dict(self):
         return {
             'history': self.history,
-            'timestamp': self.timestamp
+            'timestamp': self.timestamp,
+            'conversation_name': self.conv_name
         }
 
     def get_messages(self, include_default: bool = False):

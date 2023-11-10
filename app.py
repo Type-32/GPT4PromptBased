@@ -1,3 +1,6 @@
+import asyncio
+import time
+
 from textual import on
 from textual.app import App, ComposeResult
 from textual.containers import ScrollableContainer, Horizontal
