@@ -74,6 +74,6 @@ class ConversationMenu(Static):
             self.add_message(responseList[i], "GPT", MsgAlignment.LEFT)
 
         window_title = self.query_one("#conv-window-title_text")
-        window_title.renderable = f"Conversation at {conversation.get_processed_timestamp()}"
+        window_title.renderable = f"{conversation.conv_name}, {conversation.get_processed_timestamp()}"
         window_title.refresh()
         self.refresh()

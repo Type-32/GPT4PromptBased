@@ -54,7 +54,7 @@ class Gpt4Instance:
             self.currentConversation = None
             self.log_file.close()
 
-    def chat(self, prompt: string, stream: bool = True):
+    def chat(self, prompt: string):
         """
         Uses the API and sends the API a prompt.
         :param prompt: The prompt for the Model.
@@ -67,27 +67,9 @@ class Gpt4Instance:
         for i in self.currentConversation.get_messages_raw():
             tokenlist.append(i)
         tokenlist.append(dict({"role": "user", "content": prompt}))
-        if stream:
-            return openai.ChatCompletion.create(model="gpt-4", messages=tokenlist, stream=True)
-        response = openai.ChatCompletion.create(model="gpt-4", messages=tokenlist, stream=True)
-        connected_response: string = ""
-        for chunks in response:
-            result = chunks.to_dict().get("choices")[0].get("delta").get("content")
-            if isinstance(result, str):
-                try:
-                    mdobj = Markdown(result)
-                    printmd(mdobj, '')
-                except Exception:
-                    print(result, end='')
-                connected_response += result
-        print()
-        self.currentConversation.add_msg(prompt, MsgRole.USER)
-        self.currentConversation.add_response(connected_response)
-        self.save_conversation()
-        endtime = time.time() - starttime
-        return endtime
+        return openai.ChatCompletion.create(model="gpt-4", messages=tokenlist, stream=True)
 
-    def new_conversation(self, prompt: string = None):
+    def new_conversation(self, prompt: string = None, conv_name: string = "Untitled Conversation"):
         """
         Creates a new conversation.
         """
@@ -95,7 +77,7 @@ class Gpt4Instance:
             self.log_file.close()
         if self.currentConversation:
             self.save_conversation(True)
-        self.currentConversation = Conversation(prompt=prompt)
+        self.currentConversation = Conversation(prompt=prompt, conv_name=conv_name)
         self.refresh_conversations()
         self.log_file = open(os.path.join('conversations', f"{self.currentConversation.timestamp}.conv"), "w")
 
@@ -148,5 +130,4 @@ class Gpt4Instance:
         self.conversations = self.fetch_conversation_saves()
 
     def __del__(self):
-        if self.currentConversation:
-            self.log_file.close()
+        self.save_conversation(True)

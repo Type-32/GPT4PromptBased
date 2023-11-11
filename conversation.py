@@ -7,7 +7,7 @@ from msg_role import MsgRole
 
 
 class Conversation:
-    def __init__(self, filename: string = None, prompt: string = None):
+    def __init__(self, filename: string = None, prompt: string = None, conv_name: string = "Untitled Conversation"):
         if not os.path.exists('conversations'):
             os.makedirs('conversations')
         if filename is not None:
@@ -16,13 +16,10 @@ class Conversation:
         else:
             self.history = {"messages": [{"role": "system", "content": "You are a helpful and knowledgeable assistant." if not prompt else prompt}], "responses": ["DefaultResponse"]}
             self.timestamp = datetime.now().strftime("date%Y-%m-%d_time%H.%M.%S")
-
-        self.conv_name = ""
+            self.conv_name = conv_name
 
     def get_processed_timestamp(self) -> string:
-        processed: string = self.timestamp[4:len(self.timestamp)]
-        processed.replace("_time", ", ")
-        return processed
+        return self.timestamp[4:len(self.timestamp)].replace("_time", " ")
 
     def to_dict(self):
         return {
@@ -67,6 +64,10 @@ class Conversation:
             readResult = json.load(file)
             self.history = readResult['history']
             self.timestamp = readResult['timestamp']
+            try:
+                self.conv_name = readResult['conversation_name']
+            except Exception:
+                self.conv_name = f"Untitled Conversation at {self.get_processed_timestamp()}"
 
             # try:
             #     readResult = json.loads(next(file))

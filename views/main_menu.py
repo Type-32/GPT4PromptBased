@@ -26,7 +26,7 @@ class MainMenu(Static):
         scrollContainer.remove_children()
 
         for conv in convList:
-            convObj = ConversationButton(conv.filename, f"Created on {conv.get_processed_timestamp()}", conv.timestamp)
+            convObj = ConversationButton(conv.conv_name, f"Created on {conv.get_processed_timestamp()}", conv.timestamp)
             scrollContainer.mount(convObj)
             convObj.scroll_visible()
         self.refresh()

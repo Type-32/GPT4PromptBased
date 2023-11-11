@@ -1,4 +1,5 @@
 import asyncio
+import string
 import time
 
 from textual import on
@@ -10,6 +11,7 @@ from conversation import Conversation
 from gpt4 import Gpt4Instance
 from views.conversation_menu import ConversationMenu
 from views.main_menu import MainMenu
+from views.new_conversation_modal import NewConversationModal
 from widgets.chat_msg import MsgAlignment
 from widgets.conversation_button import ConversationButton
 
@@ -17,10 +19,10 @@ class ChatApp(App):
     """A Textual app to manage stopwatches."""
     CSS_PATH = [
         "app.tcss",
-        "views/main_menu.tcss", "views/conversation_menu.tcss",
+        "views/main_menu.tcss", "views/conversation_menu.tcss", "views/new_conversation_modal.tcss",
         "widgets/conversation_button.tcss", "widgets/chat_msg.tcss"
     ]
-    BINDINGS = [("d", "toggle_dark", "Toggle dark mode")]
+    BINDINGS = [("d", "toggle_dark", "Toggle dark mode"), ("q", "quit_app", "Quit App")]
 
     main_menu = MainMenu(id="__main-menu-view__")
     conversation_menu = ConversationMenu(id="__conversation-menu-view__")
@@ -33,9 +35,7 @@ class ChatApp(App):
         """Event handler called when a button is pressed"""
         if event.button.id == "new-conv-button":
             event.stop()
-            self.query_one(ContentSwitcher).current = "__conversation-menu-view__"
-            self.gpt_instance.new_conversation()
-            self.query_one("#__conversation-menu-view__", ConversationMenu).set_conversation(self.gpt_instance.currentConversation)
+            self.push_screen(NewConversationModal())
 
         if event.button.id == "back-button":
             event.stop()
@@ -81,7 +81,7 @@ class ChatApp(App):
     def compose(self) -> ComposeResult:
         yield Header()
         yield Footer()
-        with ContentSwitcher(initial="__main-menu-view__"):
+        with ContentSwitcher(initial="__main-menu-view__", id="content-switcher"):
             yield self.main_menu
             yield self.conversation_menu
 
@@ -92,3 +92,14 @@ class ChatApp(App):
         """An action to toggle dark mode."""
         self.dark = not self.dark
 
+    def action_quit_app(self):
+        if self.gpt_instance.log_file:
+            self.gpt_instance.save_conversation(True)
+        self.app.exit()
+
+    def __create_new_conversation__(self, conv_name: string, modal: NewConversationModal):
+        self.pop_screen()
+        self.refresh()
+        self.query_one("#content-switcher", ContentSwitcher).current = "__conversation-menu-view__"
+        self.gpt_instance.new_conversation(conv_name=conv_name)
+        self.query_one("#__conversation-menu-view__", ConversationMenu).set_conversation(self.gpt_instance.currentConversation)
