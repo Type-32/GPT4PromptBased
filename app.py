@@ -30,6 +30,7 @@ class ChatApp(App):
     def __init__(self, gpt_instance: Gpt4Instance):
         super().__init__()
         self.gpt_instance = gpt_instance
+        # self.configuration = AppConfig()
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Event handler called when a button is pressed"""

@@ -48,7 +48,7 @@ class ConversationMenu(Static):
         self.refresh()
 
     def stream_message(self, gpt: Gpt4Instance, prompt: string):
-        obj = ChatMsg(MsgAlignment.LEFT, "Loading...", "GPT-4", prompt, gpt)
+        obj = ChatMsg(MsgAlignment.LEFT, "//Loading...", "GPT-4", prompt, gpt)
         msgObj = self.query_one("#scroll-container", ScrollableContainer)
         msgObj.mount(obj)
         msgObj.scroll_visible()

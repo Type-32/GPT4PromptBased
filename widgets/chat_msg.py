@@ -14,7 +14,7 @@ from textual import events
 from textual.app import ComposeResult
 from textual.containers import Horizontal, Container
 from textual.reactive import Reactive, ReactiveType, reactive
-from textual.widgets import Static, Placeholder, Label, MarkdownViewer
+from textual.widgets import Static, Placeholder, Label, MarkdownViewer, LoadingIndicator
 
 from gpt4 import Gpt4Instance
 from msg_role import MsgRole

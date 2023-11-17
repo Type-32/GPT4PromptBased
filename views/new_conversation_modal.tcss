@@ -1,8 +1,10 @@
 #new-conv-modal {
     width: 80%;
     height: 40%;
-    padding: 2 2 2 2;
-    background: $surface;
+    padding-top: 1;
+    padding-left: 2;
+    padding-right: 2;
+    background: dimgray;
 }
 #new-conv-name-input {
     width: 100%;
@@ -10,6 +12,7 @@
     margin-right: 1;
     margin-bottom: 3;
     margin-top: 2;
+    background: $surface;
 }
 #new-conv-modals-button {
     align: center bottom;
@@ -17,11 +20,9 @@
     background: aqua;
 }
 #confirm-create-new-conv {
-        align: center bottom;
     width: 50%;
 }
 #cancel-create-new-conv {
-    align: center bottom;
     width: 50%;
 }
 

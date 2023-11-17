@@ -67,7 +67,7 @@ class Gpt4Instance:
         for i in self.currentConversation.get_messages_raw():
             tokenlist.append(i)
         tokenlist.append(dict({"role": "user", "content": prompt}))
-        return openai.ChatCompletion.create(model="gpt-4", messages=tokenlist, stream=True)
+        return openai.ChatCompletion.create(model="gpt-4", messages=tokenlist, stream=True, max_tokens=4000)
 
     def new_conversation(self, prompt: string = None, conv_name: string = "Untitled Conversation"):
         """
